@@ -7,33 +7,53 @@
 
 
 import SwiftUI
+import CoreLocation
 
 struct MainListView: View {
-    
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @StateObject private var viewModel = CitiesViewModel()
     @State private var searchText = ""
-    @State var showingAlert: Bool = false
-
+    @Binding var landscape: City?
+    @State private var navigateToDetailView: Bool = false
+    
     
     var body: some View {
         ZStack{
-            NavigationView{
-                List(searchResults, id: \.id){ city in
-                        MainCellView(city: city).background(
-                      //      NavigationLink("",destination: ItemDetailView(item: item))
-                        //        .opacity(0)
-                        )
-                        .listRowSeparator(.hidden)
-                        .onLongPressGesture {
-                            viewModel.updateFavs(city: city)
-                            showingAlert = true
+            NavigationStack{
+                List(viewModel.searchResults, id: \.id){ city in
+                    MainCellView(city: city)
+                    .listRowSeparator(.hidden)
+                    .swipeActions(edge: .trailing) {
+                        if(city.fav ?? false){
+                            handleAction(city: city, type: .destructive)
                         }
-                    
+                    }
+                    .swipeActions(edge: .leading){
+                        handleAction(city: city)
+                    }
+                    .onTapGesture {
+                            landscape = city
+                        if(horizontalSizeClass == .compact){
+                            navigateToDetailView = true
+                        }
+                          
+                    }
                 }
                 .navigationTitle("Cities")
                 .listStyle(.plain)
                 .searchable(text: $searchText, prompt: "Search for a city")
-               
+                .onChange(of: searchText) { oldValue, newValue in
+                    viewModel.searchList(searchText)
+                }
+                .background(
+                  NavigationLink(
+                    destination: CityDetailView(city:$landscape),
+                    isActive: $navigateToDetailView
+                  )
+                  {
+                    EmptyView()
+                  }
+                )
             }
             .onAppear{
                 viewModel.getCities()
@@ -43,37 +63,38 @@ struct MainListView: View {
                 viewModel.getCities()
             }
             
-        }.alert(isPresented: $showingAlert) {
-            Alert(
-                title: Text("Favoritos actualizados"),
-                dismissButton: .default(Text("OK"))
-            )
+            .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 5))
         }
+       
     }
+
     
-    //Search logic
-    var searchResults: [City] {
-         if searchText.isEmpty {
-             return viewModel.cities
-         } else {
-             return viewModel.cities.filter{$0.name?.lowercased().contains(searchText.lowercased()) ?? false}
-         }
-     }
+    
+    //Handle row swipe action
+    private func handleAction(city: City, type: ButtonRole? = nil) -> some View {
+        Button(role: type) {
+            viewModel.updateFavs(city: city)
+        } label: {
+            VStack {
+                if(type == .destructive){
+                    Image(systemName: "wrongwaysign.fill")
+                    Text("Delete Fav")
+                }else{
+                    Image(systemName: "star.fill")
+                    Text("Add Fav")
+                }
+                
+            }
+        }
+        .tint(type == .destructive ? .red : .blue)
+    }
     
 }
 
 #Preview {
-    MainListView()
+    @Previewable @State var city: City?
+    MainListView(landscape: $city)
 }
 
-extension UserDefaults {
-    var isFavorite: [Int] {
-        get {
-            array(forKey: "isFavorit") as? [Int] ?? []
-        }
-        set {
-            set(newValue, forKey: "isFavorit")
-        }
-    }
-}
+
 

@@ -22,8 +22,16 @@ struct MainCellView: View{
                     .foregroundColor(.secondary)
                     .fontWeight(.semibold)
             }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 5){
+                if(city.fav ?? false){
+                    Image(systemName: "star.fill")
+                }
+            }
             .padding(.leading)
+           
         }
+        .ignoresSafeArea()
     }
 }
 

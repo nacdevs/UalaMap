@@ -8,15 +8,15 @@
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
+       var body: some View {
+           if horizontalSizeClass == .compact {
+              PortraitView()
+           } else {
+             LandscapeView()
+           }
+       }
 }
 
 #Preview {
